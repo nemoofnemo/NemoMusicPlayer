@@ -46,7 +46,13 @@
     <ClCompile Include="NemoAudioDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NemoMediaLoader.cpp">
+    <ClCompile Include="NemoAudioLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="player_utilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libnemo\nemo_utilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -54,7 +60,13 @@
     <ClInclude Include="FFmpegHeader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NemoMediaLoader.h">
+    <ClInclude Include="NemoAudioLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="player_utilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libnemo\nemo_utilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
