@@ -3,6 +3,7 @@
 #include <memory>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_3_3_Core>
+#include "libnemo/nemo_utilities.h"
 
 class AudioWaveWidget :
 	public QOpenGLWidget,
@@ -11,15 +12,23 @@ class AudioWaveWidget :
 	Q_OBJECT
 
 private:
-	std::shared_ptr<float> wave_data = nullptr;
+	//(x1, y1), (x2, y2), (x3, y3) ...
+	//length of wave_data is sample_count * 2.
+	float* wave_data = nullptr;
 	int sample_count = 0;
+	QWidget* m_parent = nullptr;
 
 protected:
-	void initializeGL(void) override;
-	void resizeGL(int w, int h) override;
-	void paintGL(void) override;
+	virtual void initializeGL(void) override;
+	virtual void resizeGL(int w, int h) override;
+	virtual void paintGL(void) override;
 	void update_preview(void);
 	void update_data(const float* const ptr);
 	void clear_preview(void);
+
+public:
+	AudioWaveWidget();
+	explicit AudioWaveWidget(QWidget* parent);
+	virtual~AudioWaveWidget();
 };
 

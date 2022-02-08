@@ -22,11 +22,21 @@ int NemoAudioLoader::decode_packet(nemo::ByteArray* arr)
         if (ret < 0) {
             // those two return values are special and mean there is no output
             // frame available, but there were no errors during decoding
-            if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
+            if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN)) {
+                if (buf) {
+                    av_freep(&buf[0]);
+                    av_freep(&buf);
+                }
                 return 0;
-
+            }
+                
             //fprintf(stderr, "Error during decoding (%s)\n", av_err2str(ret));
             nDebug("Error during decoding");
+            
+            if (buf) {
+                av_freep(&buf[0]);
+                av_freep(&buf);
+            }
             return ret;
         }
 
@@ -188,7 +198,7 @@ bool NemoAudioLoader::open(std::string path)
         nDebug("Failed to initialize the resampling context");
         return false;
     }
-
+ 
     return true;
 }
 

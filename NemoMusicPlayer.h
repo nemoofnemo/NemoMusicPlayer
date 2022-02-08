@@ -14,6 +14,8 @@ public:
     NemoMusicPlayer(QWidget *parent = Q_NULLPTR);
     virtual ~NemoMusicPlayer();
 
+    void debug_test(void);
+
 public slots:
     void onTest(bool checked);
 
