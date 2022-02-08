@@ -12,6 +12,10 @@ int NemoAudioLoader::decode_packet(nemo::ByteArray* arr)
         return ret;
     }
 
+    int cur_buf_len = 0;
+    int max_buf_len = 0;
+    uint8_t** buf = nullptr;
+    int linesize = 0;
     // get all the available frames from the decoder
     while (ret >= 0) {
         ret = avcodec_receive_frame(codec_context, frame);
@@ -27,11 +31,60 @@ int NemoAudioLoader::decode_packet(nemo::ByteArray* arr)
         }
 
         // write the frame data
-        
+        cur_buf_len = av_rescale_rnd(frame->nb_samples, 
+            TARGET_SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP);
+        if (cur_buf_len > max_buf_len) {
+            if (buf) {
+                av_freep(&buf[0]);
+                ret = av_samples_alloc(buf, &linesize, channel_count,
+                    cur_buf_len, TARGET_SAMPLE_FORMAT, 1);
+                if (ret < 0) {
+                    nDebug("av_samples_alloc error");
+                    av_frame_unref(frame);
+                    return ret;
+                }
+                max_buf_len = cur_buf_len;
+            }
+            else {
+                av_samples_alloc_array_and_samples(&buf, &linesize,
+                    channel_count, 2048, TARGET_SAMPLE_FORMAT, 0);
+                max_buf_len = 2048;
+            }          
+        }
+
+        ret = swr_convert(swr_ctx, buf, cur_buf_len,
+            (const uint8_t**)frame->data, frame->nb_samples);
+        if (ret < 0) {
+            nDebug("swr_convert error");
+            av_frame_unref(frame);
+            if (buf) {
+                av_freep(&buf[0]);
+                av_freep(&buf);
+            }
+            return ret;
+        }
+
+        auto len = av_samples_get_buffer_size(&linesize, channel_count,
+            ret, TARGET_SAMPLE_FORMAT, 1);
+        if (ret < 0) {
+            nDebug("av_samples_get_buffer_size error");
+            av_frame_unref(frame);
+            if (buf) {
+                av_freep(&buf[0]);
+                av_freep(&buf);
+            }
+            return ret;
+        }
+
+        if(buf)
+            arr->append(buf[0], len);
 
         av_frame_unref(frame);
-        if (ret < 0)
-            return ret;
+    }
+
+    if (buf) {
+        av_freep(&buf[0]);
+        av_freep(&buf);
     }
 
     return 0;
@@ -48,6 +101,10 @@ NemoAudioLoader::~NemoAudioLoader()
 
 bool NemoAudioLoader::open(std::string path)
 {
+    if (format_context) {
+        this->close();
+    }
+
     /* open input file, and allocate format context */
     if (avformat_open_input(&format_context, path.c_str(), NULL, NULL) < 0) {
         nDebug("Could not open source file");
@@ -77,7 +134,7 @@ bool NemoAudioLoader::open(std::string path)
     }
 
     /* Allocate a codec context for the decoder */
-    auto codec_context = avcodec_alloc_context3(dec);
+    codec_context = avcodec_alloc_context3(dec);
     if (!codec_context) {
         nDebug("Failed to allocate the %s codec context");
         return false;
@@ -107,6 +164,9 @@ bool NemoAudioLoader::open(std::string path)
         return false;
     }
 
+    channel_count = av_get_channel_layout_nb_channels(
+        codec_context->channel_layout);
+
     /* create resampler context */
     swr_ctx = swr_alloc();
     if (!swr_ctx) {
@@ -132,27 +192,49 @@ bool NemoAudioLoader::open(std::string path)
     return true;
 }
 
-bool NemoAudioLoader::load(nemo::ByteArray* arr, int* channel_count)
+bool NemoAudioLoader::seek(std::chrono::milliseconds ms)
 {
-    if (!arr || !channel_count)
+    if (!format_context)
+        return false;
+    if (stream_index < 0)
+        return false;
+
+    auto target = ms_to_ts(ms.count(), 
+        format_context->streams[stream_index]->time_base);
+    auto ret = av_seek_frame(format_context, stream_index, 
+        target, AVSEEK_FLAG_ANY);
+
+    return ret >= 0;
+}
+
+int64_t NemoAudioLoader::load(nemo::ByteArray* arr, int64_t ts)
+{
+    return int64_t();
+}
+
+bool NemoAudioLoader::load(nemo::ByteArray* arr)
+{
+    if (!arr)
         return false;
 
     if (stream_index < 0)
         return false;
 
-    ///* read frames from the file */
-    //while (av_read_frame(format_context, packet) >= 0) {
-    //    // check if the packet belongs to a stream we are interested in, otherwise skip it
-    //    if (packet->stream_index == stream_index)
-    //        ret = decode_packet(arr);
-    //    av_packet_unref(packet);
-    //    if (ret < 0)
-    //        break;
-    //}
+    int ret = 0;
+    /* read frames from the file */
+    while (av_read_frame(format_context, packet) >= 0) {
+        // check if the packet belongs to a stream we are interested in, otherwise skip it
+        if (packet->stream_index == stream_index)
+            ret = decode_packet(arr);
+        av_packet_unref(packet);
+        if (ret < 0)
+            break;
+    }
 
-    ///* flush the decoders */
-    //decode_packet(arr);
+    /* flush the decoders */
+    decode_packet(arr);
     
+    return true;
 }
 
 int NemoAudioLoader::get_channel_count(void)
@@ -160,7 +242,7 @@ int NemoAudioLoader::get_channel_count(void)
     if (!codec_context)
         return 0;
     return av_get_channel_layout_nb_channels(
-        codec_context->channel_layout);;
+        codec_context->channel_layout);
 }
 
 void NemoAudioLoader::close(void)
@@ -175,5 +257,7 @@ void NemoAudioLoader::close(void)
         avcodec_free_context(&codec_context);
     if(format_context)
         avformat_close_input(&format_context);
+
     stream_index = -1;
+    channel_count = 0;
 }

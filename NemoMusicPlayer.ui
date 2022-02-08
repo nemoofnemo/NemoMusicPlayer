@@ -59,7 +59,7 @@
      <string>PushButton</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_2">
+   <widget class="QPushButton" name="testButton">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -69,7 +69,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>PushButton</string>
+     <string>test</string>
     </property>
    </widget>
    <widget class="QSlider" name="horizontalSlider">

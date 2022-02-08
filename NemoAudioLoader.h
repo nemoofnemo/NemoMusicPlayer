@@ -16,6 +16,7 @@ private:
 	AVPacket* packet = nullptr;
 	SwrContext* swr_ctx = nullptr;
 	int stream_index = -1;
+	int channel_count = 0;
 
 private:
 	int decode_packet(nemo::ByteArray* arr);
@@ -29,7 +30,9 @@ public:
 	virtual ~NemoAudioLoader();
 
 	bool open(std::string path);
-	bool load(nemo::ByteArray* arr, int* channel_count);
+	bool seek(std::chrono::milliseconds ms);
+	int64_t load(nemo::ByteArray* arr, int64_t ts);
+	bool load(nemo::ByteArray* arr);
 	int get_channel_count(void);
 	void close(void);
 };

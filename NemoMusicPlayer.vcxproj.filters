@@ -21,6 +21,12 @@
       <UniqueIdentifier>{639EADAA-A684-42e4-A9AD-28FC9BCB8F7C}</UniqueIdentifier>
       <Extensions>ts</Extensions>
     </Filter>
+    <Filter Include="Header Files\libnemo">
+      <UniqueIdentifier>{4dd5ee15-5cd7-49b5-8e38-7016367589ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libnemo">
+      <UniqueIdentifier>{7faa805a-8ee7-4c57-a483-446f431eb459}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="NemoMusicPlayer.qrc">
@@ -53,7 +59,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="libnemo\nemo_utilities.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\libnemo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -67,7 +73,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="libnemo\nemo_utilities.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\libnemo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
